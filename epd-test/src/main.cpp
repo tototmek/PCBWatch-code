@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "epd.h"
 #include "epdpaint.h"
-#include "imagedata.h"
+#include "../../graphics/output/bitmaps/bitmap_logo_64x64.h"
 
 
 #define BLACK 0
@@ -31,6 +31,8 @@ void setup() {
   
   /* Display the frame_buffer */
   EPD_SetFrameMemory(&epd, frame_buffer, 0, 0, 200, 200);
+  EPD_UpdateDisplay(&epd);
+  EPD_SetFrameMemory(&epd, BITMAP_BITMAP_LOGO_64X64, 64, 64, BITMAP_BITMAP_LOGO_64X64_WIDTH, BITMAP_BITMAP_LOGO_64X64_HEIGHT);
   EPD_UpdateDisplay(&epd);
 
   EPD_Sleep(&epd);

@@ -10,9 +10,12 @@ def convert_bitmap(bitmap_path):
 
     # Convert to binary numpy array
     image = np.array(image, dtype=np.uint8)
-    is_white = np.all(image == 255, axis=-1)
-    image = np.zeros(image.shape[:-1], dtype=np.uint8)
-    image[is_white] = 1
+    if len(image.shape) == 3:
+        is_white = np.all(image == 255, axis=-1)
+        image = np.zeros(image.shape[:-1], dtype=np.uint8)
+        image[is_white] = 1
+    if len(image.shape) == 2:
+        image = image.clip(0, 1)
 
     # Generate font header file
     bitmap_file_output = f"output/bitmaps/{bitmap_name}.h"
@@ -50,7 +53,6 @@ def convert_bitmap(bitmap_path):
             bit_index += 1
         print()
 
-    output = output[:-1]
     output += "\n};"
 
     with open(bitmap_file_output, 'w') as file:
@@ -62,4 +64,4 @@ def convert_bitmap(bitmap_path):
 
 
 
-convert_bitmap("src/bitmaps/battery.png")
+convert_bitmap("src/bitmaps/logo_64x64.png")
