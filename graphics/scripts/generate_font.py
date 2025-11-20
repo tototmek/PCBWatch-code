@@ -1,10 +1,14 @@
+#!/usr/bin/python
+
+import argparse
 import os
 from PIL import Image
 import numpy as np
 
-def generate_font(font_image, char_size, char_spacing, N):
+def generate_font(font_image, N, char_size, quiet):
     font_name = os.path.splitext(os.path.basename(font_image))[0]
-    print(f"Processing font from {font_image}")
+    if not quiet:
+        print(f"Processing font from {font_image}")
     image = Image.open(font_image)
 
     # Convert to binary numpy array
@@ -13,27 +17,15 @@ def generate_font(font_image, char_size, char_spacing, N):
     image = np.zeros(image.shape[:-1], dtype=np.uint8)
     image[is_white] = 1
 
+    char_spacing = int(np.floor((image.shape[1] - N * char_size) / (N-1)))
+    char_size = (char_size, image.shape[0])
+
     # Extract characters
     chars = []
     for i in range(N):
         startx = i * (char_size[0] + char_spacing)
         # chars.append(image[startx : startx + char_size[0], 0 : char_size[1]])
         chars.append(image[0 : char_size[1], startx : startx + char_size[0]])
-
-
-    # --- Save Characters ---
-    output_dir = f"output/fonts/{font_name}-chars"
-    os.makedirs(output_dir, exist_ok=True) 
-
-    for i, char in enumerate(chars):
-        scaled_char = char * 255 
-        
-        char_img = Image.fromarray(scaled_char, mode='L')
-        
-        filename = os.path.join(output_dir, f"char_{i:02d}.png")
-        char_img.save(filename)
-        print(f"Saved: {filename}")
-
 
     # Generate font header file
     c_font_name = "FONT_" + font_name.upper().replace("-", "_")
@@ -42,6 +34,9 @@ def generate_font(font_image, char_size, char_spacing, N):
     char_len_bytes = int(np.ceil(char_len_bits / 8))
     pad_width = char_len_bytes * 8 - char_len_bits
     font = ""
+    font += f"#ifndef {c_font_name}_H\n"
+    font += f"#define {c_font_name}_H\n\n"
+    font += f"#include <stdint.h>\n\n"
     font += f"#define {c_font_name}_CHAR_WIDTH {char_size[0]}\n"
     font += f"#define {c_font_name}_CHAR_HEIGHT {char_size[1]}\n"
     font += f"#define {c_font_name}_CHAR_SPACING {char_spacing}\n\n"
@@ -64,36 +59,50 @@ def generate_font(font_image, char_size, char_spacing, N):
         font += ",".join([hex(byte) for byte in bytes])
         font += "},\n"
         bit_index = 0
-        print(f"Character {i}:")
-        for line in range(char_size[1]):
-            for verse in range(char_size[0]):
-                if char_list[bit_index] == 1:
-                    print("#", end="")
-                else:
-                    print(".", end="")
-                bit_index += 1
-            print()
+        if not quiet:
+            print(f"Character {i}:")
+            for line in range(char_size[1]):
+                for verse in range(char_size[0]):
+                    if char_list[bit_index] == 1:
+                        print("#", end="")
+                    else:
+                        print(".", end="")
+                    bit_index += 1
+                print()
 
     font = font[:-1]
-    font += "\n};"
+    font += "\n};\n"+f"\n#endif // {c_font_name}_H\n"
 
     with open(font_file_output, "w") as file:
         file.write(font)
 
+    print(f'Saved "{font_file_output}". Font size: {char_len_bytes * N} bytes.')
 
-    print(f"Saved font header file to {font_file_output}")
-    print(f"Font size = {char_len_bytes * N} bytes")
+if __name__=="__main__":
+    parser = argparse.ArgumentParser(
+        description="Convert image files to C/C++ byte array font representations (header files)."
+    )
+    parser.add_argument(
+        'file',
+        type=str,
+        help='Path to image file.'
+    )
+    parser.add_argument(
+        'n_chars',
+        type=int,
+        help='Number of individual characters in font.'
+    )
+    parser.add_argument(
+        'char_width',
+        type=int,
+        help='Pixel width of single character in font.'
+    )
+    parser.add_argument(
+        '-q', '--quiet', 
+        action='store_true', 
+        help='Suppress preview.'
+    )
+    args = parser.parse_args()
 
+    generate_font(args.file, args.n_chars, args.char_width, args.quiet)
 
-
-input_file_name = "src/fonts/big.png"
-char_size = (37, 35)
-char_spacing = 4
-char_count = 10
-
-# input_file_name = "src/fonts/small.png"
-# char_size = (9, 14)
-# char_spacing = 5
-# char_count = 38 # 11 - just numbers and dash, 38 - with letters
-
-generate_font(input_file_name, char_size, char_spacing, char_count)
