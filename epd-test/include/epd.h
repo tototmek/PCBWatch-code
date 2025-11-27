@@ -41,34 +41,35 @@
 #define SDI_PIN 6
 #define SCL_PIN 4
 
+// Display update type commands
+#define UPDATE_FULL 0xF7
+#define UPDATE_PARTIAL 0xFF
 
-extern const unsigned char lut_full_update[];
-extern const unsigned char lut_partial_update[];
+
+extern const uint8_t lut_full_update[];
+extern const uint8_t lut_partial_update[];
+
 
 /* Hardware operating functions */
 /* public functions */
 int  EPD_Init();
-void EPD_SendCommand(unsigned char command);
-void EPD_SendData(unsigned char data);
+void EPD_SendCommand(uint8_t command);
+void EPD_SendData(uint8_t data);
 void EPD_WaitUntilIdle();
 void EPD_Reset();
 void EPD_SetFrameMemory(
-  const unsigned char* image_buffer,
+  const uint8_t* image_buffer,
   int x,
   int y,
   int image_width,
   int image_height
 );
-void EPD_ClearFrameMemory(unsigned char color);
-void EPD_UpdateDisplay();
+void EPD_ClearFrameMemory(uint8_t color);
+void EPD_UpdateFull();
+void EPD_UpdatePartial();
 void EPD_Sleep();
-// void EPD_DelayMs(EPD* epd, unsigned int delay_time);
-// void EPD_DigitalWrite(EPD* epd, int pin, int value);
-// int  EPD_DigitalRead(EPD* epd, int pin);
-
-/* private functions */
-static void EPD_SetLut(const unsigned char* lut);
-static void EPD_SetMemoryArea(int x_start, int y_start, int x_end, int y_end);
-static void EPD_SetMemoryPointer(int x, int y);
+void EPD_SetLut(const uint8_t* lut);
+void EPD_SetMemoryArea(int x_start, int y_start, int x_end, int y_end);
+void EPD_SetMemoryPointer(int x, int y);
 
 #endif /* EPD_H */

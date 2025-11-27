@@ -23,13 +23,18 @@ void setup() {
   }    
 
   EPD_ClearFrameMemory(BLACK);
-  EPD_UpdateDisplay();
   EPD_SetFrameMemory(BITMAP_LOGO_64X64, 64, 64, BITMAP_LOGO_64X64_WIDTH, BITMAP_LOGO_64X64_HEIGHT);
-  EPD_UpdateDisplay();
+  EPD_UpdateFull();
 
-  delay(1000);
-  EPD_SetFrameMemory(BITMAP_LOGO_64X64, 128, 64, BITMAP_LOGO_64X64_WIDTH, BITMAP_LOGO_64X64_HEIGHT);
-  EPD_UpdateDisplay();
+  for (int i = 0; i < 3; ++i) {
+    for (int j = 0; j < 3; ++j) {
+      if (i == 1 and j == 1) continue;
+        delay(1000);
+        EPD_SetFrameMemory(BITMAP_LOGO_64X64, 64*i, 64*j, BITMAP_LOGO_64X64_WIDTH, BITMAP_LOGO_64X64_HEIGHT);
+        EPD_UpdateFull();
+    }
+  }
+
 
   EPD_Sleep();
 }
@@ -43,5 +48,5 @@ void loop() {
     else {
         Serial.println("OK");
     }
-    delay(1000);
+    delay(1500);
 }

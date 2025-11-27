@@ -3,6 +3,9 @@
 #include "Arduino.h"
 #include "SPI.h"
 
+int currentRam = 0;
+int partialUpdateCount = 0;
+
 int EPD_Init() {
   /* EPD hardware init start */
 
@@ -39,7 +42,7 @@ int EPD_Init() {
   return 0;
 }
 
-void SpiTransfer(unsigned char data) {
+void SpiTransfer(uint8_t data) {
   digitalWrite(CS_PIN, LOW);
   SPI.transfer(data);
   digitalWrite(CS_PIN, HIGH);
@@ -49,7 +52,7 @@ void SpiTransfer(unsigned char data) {
 /**
  *  @brief: basic function for sending commands
  */
-void EPD_SendCommand(unsigned char command) {
+void EPD_SendCommand(uint8_t command) {
   digitalWrite(DC_PIN, LOW);
   SpiTransfer(command);
 }
@@ -57,7 +60,7 @@ void EPD_SendCommand(unsigned char command) {
 /**
  *  @brief: basic function for sending data
  */
-void EPD_SendData(unsigned char data) {
+void EPD_SendData(uint8_t data) {
   digitalWrite(DC_PIN, HIGH);
   SpiTransfer(data);
 }
@@ -93,7 +96,7 @@ void EPD_Reset() {
  *          this won't update the display.
  */
 void EPD_SetFrameMemory(
-  const unsigned char* image_buffer,
+  const uint8_t* image_buffer,
   int x,
   int y,
   int image_width,
@@ -124,6 +127,7 @@ void EPD_SetFrameMemory(
   }
   EPD_SetMemoryArea(x, y, x_end, y_end);
   EPD_SetMemoryPointer(x, y);
+  uint8_t cmd = (currentRam)? 26  : WRITE_RAM;
   EPD_SendCommand(WRITE_RAM);
   /* send the image data */
   for (int j = 0; j < y_end - y + 1; j++) {
@@ -137,7 +141,7 @@ void EPD_SetFrameMemory(
 *  @brief: clear the frame memory with the specified color.
 *          this won't update the display.
 */
-void EPD_ClearFrameMemory(unsigned char color) {
+void EPD_ClearFrameMemory(uint8_t color) {
   EPD_SetMemoryArea(0, 0, EPD_WIDTH - 1, EPD_HEIGHT - 1);
   EPD_SetMemoryPointer(0, 0);
   EPD_SendCommand(WRITE_RAM);
@@ -154,12 +158,25 @@ void EPD_ClearFrameMemory(unsigned char color) {
 *          the the next action of SetFrameMemory or ClearFrame will 
 *          set the other memory area.
 */
-void EPD_UpdateDisplay() {
+void EPD_UpdateFull() {
+  EPD_SetLut(lut_full_update);
   EPD_SendCommand(DISPLAY_UPDATE_CONTROL_2);
-  EPD_SendData(0xF7); // Same as in gfx2 library
+  EPD_SendData(UPDATE_FULL);
   EPD_SendCommand(MASTER_ACTIVATION);
   EPD_SendCommand(TERMINATE_FRAME_READ_WRITE);
   EPD_WaitUntilIdle();
+}
+
+void EPD_UpdatePartial() {
+  EPD_SetLut(lut_partial_update);
+  // EPD_SetMemoryArea(0, 0, EPD_WIDTH, EPD_HEIGHT);
+  EPD_SendCommand(DISPLAY_UPDATE_CONTROL_2);
+  EPD_SendData(UPDATE_PARTIAL);
+  EPD_SendCommand(MASTER_ACTIVATION);
+  EPD_SendCommand(TERMINATE_FRAME_READ_WRITE);
+  EPD_WaitUntilIdle();
+  // currentRam = !currentRam;
+  // ++partialUpdateCount;
 }
 
 /**
@@ -176,7 +193,7 @@ void EPD_Sleep() {
 /**
  *  @brief: set the look-up tables
  */
-static void EPD_SetLut(const unsigned char* lut) {
+void EPD_SetLut(const uint8_t* lut) {
   EPD_SendCommand(WRITE_LUT_REGISTER);
   /* the length of look-up table is 30 bytes */
   for (int i = 0; i < 30; i++) {
@@ -187,7 +204,7 @@ static void EPD_SetLut(const unsigned char* lut) {
 /**
  *  @brief: private function to specify the memory area for data R/W
  */
-static void EPD_SetMemoryArea(int x_start, int y_start, int x_end, int y_end) {
+void EPD_SetMemoryArea(int x_start, int y_start, int x_end, int y_end) {
   EPD_SendCommand(SET_RAM_X_ADDRESS_START_END_POSITION);
   /* x point must be the multiple of 8 or the last 3 bits will be ignored */
   EPD_SendData((x_start >> 3) & 0xFF);
@@ -202,7 +219,7 @@ static void EPD_SetMemoryArea(int x_start, int y_start, int x_end, int y_end) {
 /**
  *  @brief: private function to specify the start point for data R/W
  */
-static void EPD_SetMemoryPointer(int x, int y) {
+void EPD_SetMemoryPointer(int x, int y) {
   EPD_SendCommand(SET_RAM_X_ADDRESS_COUNTER);
   /* x point must be the multiple of 8 or the last 3 bits will be ignored */
   EPD_SendData((x >> 3) & 0xFF);
@@ -212,7 +229,7 @@ static void EPD_SetMemoryPointer(int x, int y) {
   EPD_WaitUntilIdle();
 }
 
-const unsigned char lut_full_update[] =
+const uint8_t lut_full_update[] =
 {
     0x02, 0x02, 0x01, 0x11, 0x12, 0x12, 0x22, 0x22, 
     0x66, 0x69, 0x69, 0x59, 0x58, 0x99, 0x99, 0x88, 
@@ -220,7 +237,15 @@ const unsigned char lut_full_update[] =
     0x35, 0x51, 0x51, 0x19, 0x01, 0x00
 };
 
-const unsigned char lut_partial_update[] =
+// const uint8_t lut_partial_update[] = // modified
+// {
+//     0x18, 0x24, 0x24, 0x10, 0x24, 0x24, 0x10, 0x00, 
+//     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+//     0x00, 0x00, 0x00, 0x00, 0x13, 0x25, 0x48, 0x24, 
+//     0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+// };
+
+const uint8_t lut_partial_update[] =
 {
     0x10, 0x18, 0x18, 0x08, 0x18, 0x18, 0x08, 0x00, 
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
