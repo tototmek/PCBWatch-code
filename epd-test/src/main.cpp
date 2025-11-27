@@ -4,38 +4,34 @@
 #include "../../graphics/output/bitmaps/bitmap_logo_64x64.h"
 
 
-#define BLACK 0
-#define WHITE 1
+#define BLACK 0x00
+#define WHITE 0xff
 
-unsigned char* frame_buffer = (unsigned char*)malloc(EPD_WIDTH * EPD_HEIGHT / 8);
 char time_string[] = {'0', '0', ':', '0', '0', '\0'};
 unsigned long time_start_ms;
 unsigned long time_now_s;
-
-
-EPD epd;
 
 uint8_t error = 0;
 
 void setup() {
   Serial.begin(115200);
   delay(100);
-  if (EPD_Init(&epd, lut_full_update) != 0) {
+  if (EPD_Init() != 0) {
     Serial.print("e-Paper init failed\n");
     error = 1;
     return;
   }    
-  Paint paint;
-  Paint_Init(&paint, frame_buffer, epd.width, epd.height);
-  Paint_Clear(&paint, BLACK);
-  
-  /* Display the frame_buffer */
-  EPD_SetFrameMemory(&epd, frame_buffer, 0, 0, 200, 200);
-  EPD_UpdateDisplay(&epd);
-  EPD_SetFrameMemory(&epd, BITMAP_BITMAP_LOGO_64X64, 64, 64, BITMAP_BITMAP_LOGO_64X64_WIDTH, BITMAP_BITMAP_LOGO_64X64_HEIGHT);
-  EPD_UpdateDisplay(&epd);
 
-  EPD_Sleep(&epd);
+  EPD_ClearFrameMemory(BLACK);
+  EPD_UpdateDisplay();
+  EPD_SetFrameMemory(BITMAP_LOGO_64X64, 64, 64, BITMAP_LOGO_64X64_WIDTH, BITMAP_LOGO_64X64_HEIGHT);
+  EPD_UpdateDisplay();
+
+  delay(1000);
+  EPD_SetFrameMemory(BITMAP_LOGO_64X64, 128, 64, BITMAP_LOGO_64X64_WIDTH, BITMAP_LOGO_64X64_HEIGHT);
+  EPD_UpdateDisplay();
+
+  EPD_Sleep();
 }
 
 
