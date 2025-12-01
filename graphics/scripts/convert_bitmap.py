@@ -7,6 +7,10 @@ import os
 from PIL import Image
 import numpy as np
 
+def include_file(path):
+    with open(path, 'r') as file:
+        return file.read() + "\n"
+
 def convert_bitmap(bitmap_path, quiet):
     bitmap_name = "bitmap_" + os.path.splitext(os.path.basename(bitmap_path))[0]
     if not quiet:
@@ -33,10 +37,8 @@ def convert_bitmap(bitmap_path, quiet):
     output = ""
     output += f"#ifndef {c_bitmap_name}_H\n"
     output += f"#define {c_bitmap_name}_H\n\n"
-    output += f"#include <stdint.h>\n\n"
-    output += f"#define {c_bitmap_name}_WIDTH {image_size[0]}\n"
-    output += f"#define {c_bitmap_name}_HEIGHT {image_size[1]}\n\n"
-    output += f"const uint8_t {c_bitmap_name}[{img_len_bytes}] =" +  " {\n"
+    output += include_file("src/include/bitmap.h")
+    output += f"\nstatic const uint8_t {c_bitmap_name}_DATA[{img_len_bytes}] =" +  " {\n"
 
     def bits_to_bytes_loop(bits):
         byte_list = []
@@ -46,11 +48,18 @@ def convert_bitmap(bitmap_path, quiet):
             byte_value = int(binary_string, 2)
             byte_list.append(byte_value)
         return byte_list
-
     bits : np.ndarray = image.flatten()
     bits = np.pad(bits, pad_width=(0, pad_width), mode='constant', constant_values=0)
     bytes = bits_to_bytes_loop(bits)
     output += ",".join([hex(byte) for byte in bytes])
+    output += "\n};\n"
+
+    output += f"\nconst bitmap_t {c_bitmap_name} " + "{\n"
+    output += f"    .width = {image_size[0]},\n"
+    output += f"    .height = {image_size[1]},\n"
+    output += f"    .datalen = {img_len_bytes},\n"
+    output += f"    .data = {c_bitmap_name}_DATA,\n"
+    output += "};\n"
 
     if not quiet:
         bit_index = 0
@@ -63,8 +72,7 @@ def convert_bitmap(bitmap_path, quiet):
                 bit_index += 1
             print()
 
-    output += "\n};\n"+f"\n#endif // {c_bitmap_name}_H\n"
-    
+    output += "\n#endif // {c_bitmap_name}_H\n"
 
     with open(bitmap_file_output, 'w') as file:
         file.write(output)
