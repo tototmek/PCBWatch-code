@@ -5,6 +5,10 @@ import os
 from PIL import Image
 import numpy as np
 
+def include_file(path):
+    with open(path, 'r') as file:
+        return file.read() + "\n"
+
 def generate_font(font_image, N, char_size, quiet):
     font_name = os.path.splitext(os.path.basename(font_image))[0]
     if not quiet:
@@ -36,11 +40,9 @@ def generate_font(font_image, N, char_size, quiet):
     font = ""
     font += f"#ifndef {c_font_name}_H\n"
     font += f"#define {c_font_name}_H\n\n"
-    font += f"#include <stdint.h>\n\n"
-    font += f"#define {c_font_name}_CHAR_WIDTH {char_size[0]}\n"
-    font += f"#define {c_font_name}_CHAR_HEIGHT {char_size[1]}\n"
-    font += f"#define {c_font_name}_CHAR_SPACING {char_spacing}\n\n"
-    font += f"uint8_t {c_font_name}[{N}][{char_len_bytes}] =" +  " {\n"
+    font += include_file("src/include/font.h")
+
+    font += f"\nstatic const uint8_t {c_font_name}_DATA[{N}][{char_len_bytes}]" + " = {\n"
 
     def bits_to_bytes_loop(bits):
         byte_list = []
@@ -69,9 +71,20 @@ def generate_font(font_image, N, char_size, quiet):
                         print(".", end="")
                     bit_index += 1
                 print()
-
     font = font[:-1]
-    font += "\n};\n"+f"\n#endif // {c_font_name}_H\n"
+    font += "\n};\n"
+
+    font += f"\nconst font_t {c_font_name} " + "{\n"
+    font += f"    .nChars = {N},\n"
+    font += f"    .charWidth = {char_size[0]},\n"
+    font += f"    .charHeight = {char_size[1]},\n"
+    font += f"    .charSpacing = {char_spacing},\n"
+    font += f"    .charDatalen = {char_len_bytes},\n"
+    font += f"    .data = (uint8_t*){c_font_name}_DATA,\n"
+    font += "};\n"
+
+    font += f"\n#endif // {c_font_name}_H\n"
+
 
     with open(font_file_output, "w") as file:
         file.write(font)
