@@ -21,7 +21,7 @@ struct EPD {
 
 void EPD_SetMemoryArea(uint8_t x, uint8_t y, uint8_t x_end, uint8_t y_end);
 void EPD_SetMemoryPointer(uint8_t x, uint8_t y);
-void EPD_SetCommand(uint8_t command);
+void EPD_SendCommand(uint8_t command);
 void EPD_SendData(uint8_t data);
 
 extern EPD epd;

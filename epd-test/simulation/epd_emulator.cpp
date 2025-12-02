@@ -16,11 +16,11 @@ void EPD_SetMemoryPointer(uint8_t x, uint8_t y) {
     epd.memoryPointerY = y;
 }
 
-void EPD_SetCommand(uint8_t command) {}
+void EPD_SendCommand(uint8_t command) {}
 
 void EPD_SendData(uint8_t data) {
     epdDisplayData[epd.memoryPointerY][epd.memoryPointerX++] = data;
-    if (epd.memoryPointerX >= epd.memoryAreaXEnd) {
+    if (epd.memoryPointerX > epd.memoryAreaXEnd) {
         epd.memoryPointerX = epd.memoryAreaX;
         ++epd.memoryPointerY;
     }

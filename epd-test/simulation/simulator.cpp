@@ -5,6 +5,7 @@ namespace {
     void DrawPixelAt(SDL_Renderer* renderer, uint8_t value, int xIdx, int yIdx);
     void DrawDisplayData(SDL_Renderer* renderer);
     void DrawGrid(SDL_Renderer* renderer);
+    void DrawMemoryArea(SDL_Renderer* renderer);
 } // namespace
 
 void Simulator_Init(Simulator* sim) {
@@ -22,6 +23,7 @@ void Simulator_Update(Simulator* sim) {
         SDL_SetRenderDrawColor(sim->renderer, 0, 0, 0, 255);
         SDL_RenderClear(sim->renderer);
         DrawDisplayData(sim->renderer);
+        DrawMemoryArea(sim->renderer);
         DrawGrid(sim->renderer);
         SDL_RenderPresent(sim->renderer);
     }
@@ -79,6 +81,18 @@ void DrawGrid(SDL_Renderer* renderer) {
         SDL_RenderDrawLine(renderer, position, 0, position, kImageSize);
         SDL_RenderDrawLine(renderer, 0, position, kImageSize, position);
     }
+}
+
+void DrawMemoryArea(SDL_Renderer* renderer) {
+    int x = epd.memoryAreaX * 8 * kPixelSize;
+    int y = epd.memoryAreaY * kPixelSize;
+    int w = (epd.memoryAreaXEnd - epd.memoryAreaX + 1) * 8 * kPixelSize;
+    int h = (epd.memoryAreaYEnd - epd.memoryAreaY + 1) * kPixelSize;
+    SDL_Rect rect = {.x=x, .y=y, .w=w, .h=h};
+    SDL_SetRenderDrawColor(renderer, 20, 200, 0, 30);
+    SDL_RenderFillRect(renderer, &rect);
+    SDL_SetRenderDrawColor(renderer, 20, 200, 0, 255);
+    SDL_RenderDrawRect(renderer, &rect);
 }
 
 } // namespace
