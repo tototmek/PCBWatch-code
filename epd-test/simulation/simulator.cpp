@@ -15,7 +15,11 @@ void Simulator_Init(Simulator* sim) {
                                           SDL_WINDOWPOS_CENTERED,
                                           kImageSize, kImageSize,
                                           0);
+
     sim->renderer = SDL_CreateRenderer(sim->window, -1, 0);
+    // SDL_CreateWindowAndRenderer(kImageSize, kImageSize,
+    //                             0,
+    //                             &sim->window, &sim->renderer);
     SDL_SetRenderDrawBlendMode(sim->renderer, SDL_BLENDMODE_BLEND);
 }
 
