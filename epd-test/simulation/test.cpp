@@ -4,13 +4,30 @@
 #include "../../graphics/output/bitmaps/bitmap_colon.h"
 #include "../../graphics/output/fonts/font_big.h"
 #include "../../graphics/output/fonts/font_small_bold.h"
+#include "../../graphics/output/fonts/font_small_letters.h"
 
 void EPD_SetFrameMemory(const uint8_t* image_buffer, int x, int y, int image_width, int image_height);
 void EPD_DrawFont(int x, int y, font_t font, int char_idx, int seq_n=0);
 void EPD_DrawBitmap(int x, int y, bitmap_t bitmap);
+void EPD_DrawText(int x, int y, font_t font, char* text, int textLen);
 
 #define EPD_WIDTH kNumPixels
 #define EPD_HEIGHT kNumPixels
+
+// char poniedzalek[8] = {10, 9, 8, 5, 4, 3, 15, 17};
+// char wtorek[6] = {14, 13, 9, 11, 4, 6};
+// char sroda[5] = {18, 11, 9, 3, 0};
+// char czwartek[8] = {2, 15, 14, 0, 11, 13, 4, 6};
+// char piątek[6] = {10, 5, 16, 13, 4, 6};
+// char sobota[6] = {12, 9, 1, 9, 13, 0};
+// char niedziela[9] = {8, 5, 4, 3, 15, 5, 4, 7, 0};
+char poniedzialek[4] = {10, 9, 8, 17};
+char wtorek[4] = {14, 13, 9, 17};
+char sroda[4] = {18, 11, 9, 17};
+char czwartek[4] = {2, 15, 14, 17};
+char piątek[4] = {10, 5, 16, 17};
+char sobota[4] = {12, 9, 1, 17};
+char niedziela[4] = {8, 5, 4, 17};
 
 
 #define TIME_Y 64
@@ -71,7 +88,7 @@ int main()
     EPD_DrawBitmap(96, TIME_Y, BITMAP_COLON);
     EPD_DrawFont(16, DATE_Y, FONT_SMALL_BOLD, 10, 2);
     EPD_DrawFont(16, DATE_Y, FONT_SMALL_BOLD, 10, 5);
-    EPD_DrawFont(120, 150, FONT_SMALL_BOLD, 7, 3);
+    EPD_DrawText(16, DATE_Y + FONT_SMALL_BOLD.charHeight + 10, FONT_SMALL_LETTERS, sroda, 4);
     DrawTime();
     DrawDate();
     uint8_t i = 0;
@@ -164,4 +181,16 @@ void EPD_DrawFont(int x, int y, font_t font, int char_idx, int seq_n) {
 
 void EPD_DrawBitmap(int x, int y, bitmap_t bitmap) {
     EPD_SetFrameMemory(bitmap.data, x, y, bitmap.width, bitmap.height);
+}
+
+
+
+
+/*
+Draws a sequence of characters as one action, to avoid characters occluding each other
+*/
+void EPD_DrawText(int x, int y, font_t font, char* text, int textLen) {
+  for (int c = 0; c < textLen; ++c) {
+    EPD_DrawFont(x, y, font, text[c], c);
+  }
 }
